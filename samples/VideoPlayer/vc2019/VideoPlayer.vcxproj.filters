@@ -35,9 +35,6 @@
     <ClCompile Include="..\..\..\src\Decoder.cpp">
       <Filter>blocks\ffmpeg-cpp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\BufferInputSource.cpp">
-      <Filter>blocks\ffmpeg-cpp</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\Resources.h">
@@ -47,9 +44,6 @@
       <Filter>blocks\ffmpeg-cpp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\Decoder.h">
-      <Filter>blocks\ffmpeg-cpp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\BufferInputSource.h">
       <Filter>blocks\ffmpeg-cpp</Filter>
     </ClInclude>
   </ItemGroup>

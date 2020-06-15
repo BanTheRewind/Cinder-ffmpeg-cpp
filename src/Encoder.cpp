@@ -11,38 +11,16 @@ Encoder::Options::Options( const Encoder::Options& rhs )
 
 Encoder::Options& Encoder::Options::operator=( const Encoder::Options& rhs )
 {
-	mAudioChannels		= rhs.mAudioChannels;
-	mAudioCodec			= rhs.mAudioCodec;
-	mAudioSampleFormat	= rhs.mAudioSampleFormat;
-	mAudioSampleRate	= rhs.mAudioSampleRate;
-	mFilterConfig		= rhs.mFilterConfig;
-	mOutputPath			= rhs.mOutputPath;
-	mVideoCodec			= rhs.mVideoCodec;
-	return *this;
-}
-
-
-Encoder::Options& Encoder::Options::audioChannels( int32_t v )
-{
-	setAudioChannels( v );
+	mAudioCodec		= rhs.mAudioCodec;
+	mFilterConfig	= rhs.mFilterConfig;
+	mOutputPath		= rhs.mOutputPath;
+	mVideoCodec		= rhs.mVideoCodec;
 	return *this;
 }
 
 Encoder::Options& Encoder::Options::audioCodec( AudioCodec t )
 {
 	setAudioCodec( t );
-	return *this;
-}
-
-Encoder::Options& Encoder::Options::audioSampleFormat( AVSampleFormat t )
-{
-	setAudioSampleFormat( t );
-	return *this;
-}
-
-Encoder::Options& Encoder::Options::audioSampleRate( int32_t v )
-{
-	setAudioSampleRate( v );
 	return *this;
 }
 
@@ -58,7 +36,7 @@ Encoder::Options& Encoder::Options::outputPath( std::string& path )
 	return *this;
 }
 
-Encoder::Options& Encoder::Options::outputVideoCodec( VideoCodec t )
+Encoder::Options& Encoder::Options::videoCodec( VideoCodec t )
 {
 	setVideoCodec( t );
 	return *this;
@@ -70,11 +48,46 @@ EncoderRef Encoder::create( Encoder::Options& options ) {
 
 Encoder::~Encoder()
 {
+	if ( mMuxer != nullptr ) {
+		mMuxer->Close();
+	}
 }
 
 Encoder::Encoder( Encoder::Options& options )
 {
 	mOptions = options;
+
+	if ( !mOptions.getOutputPath().empty() ) {
+		mMuxer = MuxerRef( new Muxer( mOptions.getOutputPath().c_str() ) );
+
+		mAudioEncoder = AudioEncoderRef( new AudioEncoder( &mOptions.getAudioCodec(), mMuxer.get() ) );
+		mVideoEncoder = VideoEncoderRef( new VideoEncoder( &mOptions.getVideoCodec(), mMuxer.get() ) );
+		if ( mOptions.getFilterConfig().empty() ) {
+			mFrameSink = FrameSinkRef( new Filter( mOptions.getFilterConfig().c_str(), mVideoEncoder.get() ) );
+		} else {
+			mFrameSink = mVideoEncoder;
+		}
+	}
+}
+
+void Encoder::preparePipeline()
+{
+	if ( mInputSourceAudio != nullptr ) {
+		mInputSourceAudio->PreparePipeline();
+	}
+	if ( mInputSourceVideo != nullptr ) {
+		mInputSourceVideo->PreparePipeline();
+	}
+}
+
+void Encoder::step()
+{
+	if ( mInputSourceAudio != nullptr ) {
+		mInputSourceAudio->Step();
+	}
+	if ( mInputSourceVideo != nullptr ) {
+		mInputSourceVideo->Step();
+	}
 }
 
 }

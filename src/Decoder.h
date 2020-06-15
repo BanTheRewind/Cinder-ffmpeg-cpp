@@ -5,17 +5,49 @@
 #include <memory>
 
 namespace ffmpegcpp {
-	using DecoderRef = std::shared_ptr<class Decoder>;
+	using DecoderRef			= std::shared_ptr<class Decoder>;
 
 	class Decoder
 	{
 	public:
-		static DecoderRef create();
+		using DemuxerRef		= std::shared_ptr<Demuxer>;
+
+		static DecoderRef		create( const std::string& path );
 		~Decoder();
 	private:
-		Decoder();
+		class StreamFrameSink : public FrameSink, public FrameWriter
+		{
+		public:
+			FrameSinkStream*	mStream { nullptr };
+			AVMediaType			mMediaType;
 
-		InputSource*	mInputSourceAudio { nullptr };
-		InputSource*	mInputSourceVideo { nullptr };
+			AVMediaType GetMediaType() { return mMediaType; }
+
+			FrameSinkStream* CreateStream()
+			{
+				mStream = new FrameSinkStream( this, 0 );
+				return mStream;
+			}
+
+			void WriteFrame(int streamIndex, AVFrame* frame, StreamData* streamData)
+			{
+				// TODO send buffer
+			}
+
+			void Close(int streamIndex)
+			{
+				delete mStream;
+			}
+		};
+
+		using StreamFrameSinkRef	= std::shared_ptr<StreamFrameSink>;
+		
+		Decoder( const std::string& path );
+
+		DemuxerRef				mDemuxerAudio	{ nullptr };
+		DemuxerRef				mDemuxerVideo	{ nullptr };
+		StreamFrameSinkRef		mFrameSinkAudio	{ nullptr };
+		StreamFrameSinkRef		mFrameSinkVideo	{ nullptr };
+		std::string				mPath			{ "" };
 	};
 }
