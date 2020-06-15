@@ -1,0 +1,3 @@
+[submodule "ffmpeg-cpp"]
+	path = ffmpeg-cpp
+	url = https://github.com/BanTheRewind/ffmpeg-cpp.git
