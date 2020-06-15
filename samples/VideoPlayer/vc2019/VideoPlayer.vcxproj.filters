@@ -29,7 +29,13 @@
     <ClInclude Include="..\include\Resources.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClCompile Include="..\..\..\src\Cinder-ffmpeg-cpp.cpp">
+    <ClCompile Include="..\..\..\src\Encoder.cpp">
+      <Filter>blocks\ffmpeg-cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\Decoder.cpp">
+      <Filter>blocks\ffmpeg-cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\BufferInputSource.cpp">
       <Filter>blocks\ffmpeg-cpp</Filter>
     </ClCompile>
   </ItemGroup>
@@ -37,7 +43,13 @@
     <ClInclude Include="..\include\Resources.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\Cinder-ffmpeg-cpp.h">
+    <ClInclude Include="..\..\..\src\Encoder.h">
+      <Filter>blocks\ffmpeg-cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\Decoder.h">
+      <Filter>blocks\ffmpeg-cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\BufferInputSource.h">
       <Filter>blocks\ffmpeg-cpp</Filter>
     </ClInclude>
   </ItemGroup>
