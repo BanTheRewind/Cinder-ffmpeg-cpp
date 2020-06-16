@@ -116,15 +116,15 @@
   <ItemGroup />
   <ItemGroup />
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\Converter.cpp" />
     <ClCompile Include="..\..\..\src\Decoder.cpp" />
     <ClCompile Include="..\..\..\src\Encoder.cpp" />
-    <ClCompile Include="..\..\..\src\StreamFrameSink.cpp" />
     <ClCompile Include="..\src\VideoPlayerApp.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\Converter.h" />
     <ClInclude Include="..\..\..\src\Decoder.h" />
     <ClInclude Include="..\..\..\src\Encoder.h" />
-    <ClInclude Include="..\..\..\src\StreamFrameSink.h" />
     <ClInclude Include="..\include\Resources.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

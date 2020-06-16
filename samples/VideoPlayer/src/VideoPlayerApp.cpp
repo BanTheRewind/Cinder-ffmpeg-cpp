@@ -3,6 +3,7 @@
 #include "cinder/gl/gl.h"
 #include "cinder/Log.h"
 
+#include "Converter.h"
 #include "Decoder.h"
 
 class VideoPlayerApp : public ci::app::App 
@@ -10,10 +11,13 @@ class VideoPlayerApp : public ci::app::App
 public:
 	VideoPlayerApp();
 private:
-	void draw() override;
-	void update() override;
+	void 					draw() override;
+	void					update() override;
+	
+	ffmpegcpp::ConverterRef	mConverter	{ nullptr };
+	ffmpegcpp::DecoderRef	mDecoder	{ nullptr };
 
-	ffmpegcpp::DecoderRef	mDecoder { nullptr };
+	ci::gl::Texture2dRef	mTexture { nullptr };
 };
 
 using namespace ci;
@@ -23,23 +27,35 @@ using namespace std;
 
 VideoPlayerApp::VideoPlayerApp()
 {
-	static int frameCount = 0;
-	//mDecoder = Decoder::create( "https://holobooth.net/media/e111.mp4" );
-	mDecoder = Decoder::create( "D:\\Developer\\cinder_master\\blocks\\Cinder-ffmpeg-cpp\\ffmpeg-cpp\\samples\\big_buck_bunny.mp4" );
+	mConverter = Converter::create( Converter::Options()
+		.height( getWindowHeight() )
+		.width( getWindowWidth() ) );
+	mDecoder = Decoder::create( "https://holobooth.net/media/e111.mp4" );
 	mDecoder->connectEventHandler( [ & ]( int32_t streamIndex, AVFrame* frame, StreamData* streamData ) {
-		CI_LOG_V( frameCount );
-		frameCount++;
+		if ( streamData->type == AVMediaType::AVMEDIA_TYPE_VIDEO ) {
+			AVFrame* rgbFrame = mConverter->convert( frame );
+			Surface8uRef surf = toSurface( rgbFrame );
+			mTexture = gl::Texture2d::create( *surf );
+		}
 	} );
-	mDecoder->start();
 }
 
 void VideoPlayerApp::draw()
 {
-	gl::clear(); 
+	gl::clear();
+	if ( mTexture != nullptr ) {
+		gl::draw( mTexture, mTexture->getBounds(), getWindowBounds() );
+	}
 }
 
 void VideoPlayerApp::update()
 {
+	if ( mDecoder != nullptr ) {
+		mDecoder->step();
+	}
 }
 
-CINDER_APP( VideoPlayerApp, RendererGl )
+CINDER_APP( VideoPlayerApp, RendererGl, []( App::Settings* settings )
+{
+	settings->setWindowSize( 1080 / 2, 1920 / 2 );
+} )

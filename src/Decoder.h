@@ -1,13 +1,39 @@
 #pragma once
 
+#include "cinder/Surface.h"
 #include "ffmpegcpp.h"
-#include "StreamFrameSink.h"
 #include <functional>
 #include <memory>
-#include <thread>
 
 namespace ffmpegcpp {
-	using DecoderRef = std::shared_ptr<class Decoder>;
+	ci::Channel8uRef		toChannel( AVFrame* frame );
+	ci::Surface8uRef		toSurface( AVFrame* frame );
+
+	using DecoderRef			= std::shared_ptr<class Decoder>;
+	using StreamFrameSinkRef	= std::shared_ptr<class StreamFrameSink>;
+	using FrameEventHandler		= std::function<void ( int32_t, AVFrame*, StreamData* )>;
+
+	class StreamFrameSink : public FrameSink, public FrameWriter
+	{
+	public:
+		static StreamFrameSinkRef	create( AVMediaType mediaType );
+		~StreamFrameSink();
+
+		void				Close( int32_t streamIndex );
+		FrameSinkStream*	CreateStream();
+		AVMediaType			GetMediaType() { return mMediaType; }
+		bool				IsPrimed() { return true; }
+		void				WriteFrame( int32_t streamIndex, AVFrame* frame, StreamData* streamData );
+	private:
+		StreamFrameSink( AVMediaType mediaType );
+
+		FrameSinkStream*	mStream { nullptr };
+		AVMediaType			mMediaType;
+	protected:
+		FrameEventHandler	mEventHandler { nullptr };
+
+		friend class		Decoder;
+	};
 
 	class Decoder
 	{
@@ -17,8 +43,7 @@ namespace ffmpegcpp {
 		static DecoderRef create( const std::string& path );
 		~Decoder();
 
-		void				start();
-		void				stop();
+		void				step();
 
 		template<typename T, typename Y> 
 		inline void			connectEventHandler( T eventHandler, Y *obj )
@@ -28,23 +53,14 @@ namespace ffmpegcpp {
 		void				connectEventHandler( const std::function<void( int32_t, AVFrame*, StreamData* )>& eventHandler );
 		void				disconnectEventHandler();
 	private:
-		using ThreadRef = std::shared_ptr<std::thread>;
-
 		Decoder( const std::string& path );
-
-		std::function<void ( int32_t, AVFrame*, StreamData* )>	mEventHandler;
-
-		void				run();
-		virtual void		update();
-	
-		std::atomic_bool	mNewFrameAudio	{ false };
-		std::atomic_bool	mNewFrameVideo	{ false };
-		std::atomic_bool	mRunning		{ false };
-		ThreadRef			mThread			{ nullptr };
 
 		DemuxerRef			mDemuxer				{ nullptr };
 		StreamFrameSinkRef	mStreamFrameSinkAudio	{ nullptr };
 		StreamFrameSinkRef	mStreamFrameSinkVideo	{ nullptr };
 		std::string			mPath					{ "" };
+		bool				mRunning				{ false };
+
+		uint32_t			mSteps { 0 };
 	};
 }

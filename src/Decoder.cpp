@@ -1,18 +1,56 @@
 #include "Decoder.h"
 
-#include "cinder/app/App.h"
 #include "cinder/Log.h"
 
 namespace ffmpegcpp {
 
 	using namespace ci;
-	using namespace ci::app;
 	using namespace std;
 
-	static const long long kThreadSleepDuration = 30L;
+	Channel8uRef toChannel( AVFrame* frame ) {
+		return Channel8u::create( frame->width, frame->height, (uint32_t)frame->linesize[ 0 ], 1, frame->data[ 0 ] );
+	}
 
-	Surface8uRef toSurface8u( AVFrame* frame ) {
-		return Surface8u::create( frame->data[ 0 ], frame->width, frame->height, frame->linesize, SurfaceChannelOrder::RGB );
+	Surface8uRef toSurface( AVFrame* frame ) {
+		return Surface8u::create( frame->data[ 0 ], frame->width, frame->height, frame->linesize[ 0 ], SurfaceChannelOrder::RGBA );
+	}
+
+	StreamFrameSinkRef StreamFrameSink::create( AVMediaType mediaType )
+	{
+		return StreamFrameSinkRef( new StreamFrameSink( mediaType ) );
+	}
+
+	StreamFrameSink::StreamFrameSink( AVMediaType mediaType )
+	{
+		mMediaType = mediaType;
+	}
+
+	StreamFrameSink::~StreamFrameSink()
+	{
+		Close( 0 );
+	}
+
+	FrameSinkStream* StreamFrameSink::CreateStream()
+	{
+		if ( mStream == nullptr ) {
+			mStream = new FrameSinkStream( this, 0 );
+		}
+		return mStream;
+	}
+
+	void StreamFrameSink::WriteFrame( int32_t streamIndex, AVFrame* frame, StreamData* streamData )
+	{
+		if ( mEventHandler != nullptr ) {
+			mEventHandler( streamIndex, frame, streamData );
+		}
+	}
+
+	void StreamFrameSink::Close( int32_t streamIndex )
+	{
+		if ( mStream != nullptr ) {
+			delete mStream;
+			mStream = nullptr;
+		}
 	}
 
 	DecoderRef Decoder::create( const string& path )
@@ -38,87 +76,39 @@ namespace ffmpegcpp {
 		mDemuxer->DecodeBestVideoStream( mStreamFrameSinkVideo.get() );
 		mDemuxer->PreparePipeline();
 
-		App::get()->getSignalUpdate().connect( bind( &Decoder::update, this ) );
 	}
 
 	void Decoder::connectEventHandler( const function<void( int32_t, AVFrame*, StreamData* )>& eventHandler )
 	{
-		mEventHandler = eventHandler;
+		if ( mStreamFrameSinkAudio != nullptr ) {
+			mStreamFrameSinkAudio->mEventHandler = eventHandler;
+		}
+		if ( mStreamFrameSinkVideo != nullptr ) {
+			mStreamFrameSinkVideo->mEventHandler = eventHandler;
+		}
 	}
 
 	void Decoder::disconnectEventHandler()
 	{
-		mEventHandler = nullptr;
-	}
-
-	void Decoder::run()
-	{
-		while ( mRunning ) {
-			if ( mNewFrameAudio || mNewFrameVideo || mEventHandler == nullptr  ) {
-				this_thread::sleep_for( chrono::milliseconds( kThreadSleepDuration ) );
-				continue;
-			}
-
-			if ( mEventHandler != nullptr ) {
-				if ( !mNewFrameAudio && 
-					mStreamFrameSinkAudio != nullptr && 
-					mStreamFrameSinkAudio->checkNewFrame() ) {
-					mNewFrameAudio = true;
-				}
-				if ( !mNewFrameVideo && 
-					mStreamFrameSinkVideo != nullptr && 
-					mStreamFrameSinkVideo->checkNewFrame() ) {
-					mNewFrameVideo = true;
-				}
-			}
-			if ( mDemuxer != nullptr ) {
-				try {
-					mDemuxer->Step();
-				} catch ( FFmpegException ex ) {
-					mRunning = false;
-				}
-			}
+		if ( mStreamFrameSinkAudio != nullptr ) {
+			mStreamFrameSinkAudio->mEventHandler = nullptr;
+		}
+		if ( mStreamFrameSinkVideo != nullptr ) {
+			mStreamFrameSinkVideo->mEventHandler = nullptr;
 		}
 	}
 
-	void Decoder::start()
+	void Decoder::step()
 	{
-	   	stop();
-		if ( mThread == nullptr ) {
-			mNewFrameAudio	= false;
-			mNewFrameVideo	= false;
-			mRunning		= true;
-			mThread			= ThreadRef( new thread( bind( &Decoder::run, this ) ) );
-		}
-	}
-
-	void Decoder::stop()
-	{
-		mRunning = false;
-		if ( mThread != nullptr  ) {
-			if ( mThread->joinable() ) {
-				mThread->join();
+		if ( mDemuxer != nullptr && !mDemuxer->IsDone() ) {
+			try {
+				mDemuxer->Step();
+				++mSteps;
+			} catch ( FFmpegException ex ) {
+				mSteps = 0;
 			}
-			mThread.reset();
-			mThread = nullptr;
-		}
-	}
-
-	void Decoder::update()
-	{
-		if ( mEventHandler != nullptr ) {
-			if ( mNewFrameAudio && mStreamFrameSinkAudio != nullptr ) {
-				mEventHandler( mStreamFrameSinkAudio->getFrame().streamIndex, 
-							   mStreamFrameSinkAudio->getFrame().frame, 
-							   mStreamFrameSinkAudio->getFrame().streamData );
-				mNewFrameAudio = false;
-			}
-			if ( mNewFrameVideo && mStreamFrameSinkVideo != nullptr ) {
-				mEventHandler( mStreamFrameSinkVideo->getFrame().streamIndex, 
-					mStreamFrameSinkVideo->getFrame().frame, 
-					mStreamFrameSinkVideo->getFrame().streamData );
-				mNewFrameVideo = false;
-			}
+		} else {
+			mSteps = 0;
 		}
 	}
 
