@@ -75,7 +75,6 @@ namespace ffmpegcpp {
 		mDemuxer->DecodeBestAudioStream( mStreamFrameSinkAudio.get() );
 		mDemuxer->DecodeBestVideoStream( mStreamFrameSinkVideo.get() );
 		mDemuxer->PreparePipeline();
-
 	}
 
 	void Decoder::connectEventHandler( const function<void( int32_t, AVFrame*, StreamData* )>& eventHandler )
@@ -103,12 +102,8 @@ namespace ffmpegcpp {
 		if ( mDemuxer != nullptr && !mDemuxer->IsDone() ) {
 			try {
 				mDemuxer->Step();
-				++mSteps;
 			} catch ( FFmpegException ex ) {
-				mSteps = 0;
 			}
-		} else {
-			mSteps = 0;
 		}
 	}
 

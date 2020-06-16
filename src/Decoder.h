@@ -60,7 +60,5 @@ namespace ffmpegcpp {
 		StreamFrameSinkRef	mStreamFrameSinkVideo	{ nullptr };
 		std::string			mPath					{ "" };
 		bool				mRunning				{ false };
-
-		uint32_t			mSteps { 0 };
 	};
 }
