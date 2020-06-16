@@ -9,6 +9,12 @@ namespace ffmpegcpp {
 	using namespace ci::app;
 	using namespace std;
 
+	static const long long kThreadSleepDuration = 30L;
+
+	Surface8uRef toSurface8u( AVFrame* frame ) {
+		return Surface8u::create( frame->data[ 0 ], frame->width, frame->height, frame->linesize, SurfaceChannelOrder::RGB );
+	}
+
 	DecoderRef Decoder::create( const string& path )
 	{
 		return DecoderRef( new Decoder { path } );
@@ -48,6 +54,11 @@ namespace ffmpegcpp {
 	void Decoder::run()
 	{
 		while ( mRunning ) {
+			if ( mNewFrameAudio || mNewFrameVideo || mEventHandler == nullptr  ) {
+				this_thread::sleep_for( chrono::milliseconds( kThreadSleepDuration ) );
+				continue;
+			}
+
 			if ( mEventHandler != nullptr ) {
 				if ( !mNewFrameAudio && 
 					mStreamFrameSinkAudio != nullptr && 

@@ -23,12 +23,12 @@ using namespace std;
 
 VideoPlayerApp::VideoPlayerApp()
 {
-	static int32_t frameIndex = 0;
-	mDecoder = Decoder::create( "https://holobooth.net/media/e111.mp4" );
-	//mDecoder = Decoder::create( "D:\\Developer\\cinder_master\\blocks\\Cinder-ffmpeg-cpp\\ffmpeg-cpp\\samples\\big_buck_bunny.mp4" );
+	static int frameCount = 0;
+	//mDecoder = Decoder::create( "https://holobooth.net/media/e111.mp4" );
+	mDecoder = Decoder::create( "D:\\Developer\\cinder_master\\blocks\\Cinder-ffmpeg-cpp\\ffmpeg-cpp\\samples\\big_buck_bunny.mp4" );
 	mDecoder->connectEventHandler( [ & ]( int32_t streamIndex, AVFrame* frame, StreamData* streamData ) {
-		CI_LOG_V( frameIndex );
-		frameIndex++;
+		CI_LOG_V( frameCount );
+		frameCount++;
 	} );
 	mDecoder->start();
 }
