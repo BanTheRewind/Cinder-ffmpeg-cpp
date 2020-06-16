@@ -50,6 +50,7 @@ Encoder::~Encoder()
 {
 	if ( mMuxer != nullptr ) {
 		mMuxer->Close();
+		mMuxer = nullptr;
 	}
 }
 

@@ -1,53 +1,50 @@
 #pragma once
 
 #include "ffmpegcpp.h"
-#include <filesystem>
+#include "StreamFrameSink.h"
+#include <functional>
 #include <memory>
+#include <thread>
 
 namespace ffmpegcpp {
-	using DecoderRef			= std::shared_ptr<class Decoder>;
+	using DecoderRef = std::shared_ptr<class Decoder>;
 
 	class Decoder
 	{
 	public:
-		using DemuxerRef		= std::shared_ptr<Demuxer>;
+		using DemuxerRef = std::shared_ptr<Demuxer>;
 
-		static DecoderRef		create( const std::string& path );
+		static DecoderRef create( const std::string& path );
 		~Decoder();
-	private:
-		class StreamFrameSink : public FrameSink, public FrameWriter
+
+		void				start();
+		void				stop();
+
+		template<typename T, typename Y> 
+		inline void			connectEventHandler( T eventHandler, Y *obj )
 		{
-		public:
-			FrameSinkStream*	mStream { nullptr };
-			AVMediaType			mMediaType;
+			connectEventHandler( std::bind( eventHandler, obj, std::placeholders::_1 ) );
+		}
+		void				connectEventHandler( const std::function<void( int32_t, AVFrame*, StreamData* )>& eventHandler );
+		void				disconnectEventHandler();
+	private:
+		using ThreadRef = std::shared_ptr<std::thread>;
 
-			AVMediaType GetMediaType() { return mMediaType; }
-
-			FrameSinkStream* CreateStream()
-			{
-				mStream = new FrameSinkStream( this, 0 );
-				return mStream;
-			}
-
-			void WriteFrame(int streamIndex, AVFrame* frame, StreamData* streamData)
-			{
-				// TODO send buffer
-			}
-
-			void Close(int streamIndex)
-			{
-				delete mStream;
-			}
-		};
-
-		using StreamFrameSinkRef	= std::shared_ptr<StreamFrameSink>;
-		
 		Decoder( const std::string& path );
 
-		DemuxerRef				mDemuxerAudio	{ nullptr };
-		DemuxerRef				mDemuxerVideo	{ nullptr };
-		StreamFrameSinkRef		mFrameSinkAudio	{ nullptr };
-		StreamFrameSinkRef		mFrameSinkVideo	{ nullptr };
-		std::string				mPath			{ "" };
+		std::function<void ( int32_t, AVFrame*, StreamData* )>	mEventHandler;
+
+		void				run();
+		virtual void		update();
+	
+		std::atomic_bool	mNewFrameAudio	{ false };
+		std::atomic_bool	mNewFrameVideo	{ false };
+		std::atomic_bool	mRunning		{ false };
+		ThreadRef			mThread			{ nullptr };
+
+		DemuxerRef			mDemuxer				{ nullptr };
+		StreamFrameSinkRef	mStreamFrameSinkAudio	{ nullptr };
+		StreamFrameSinkRef	mStreamFrameSinkVideo	{ nullptr };
+		std::string			mPath					{ "" };
 	};
 }
