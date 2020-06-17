@@ -65,16 +65,27 @@ namespace ffmpegcpp {
 
 	Decoder::Decoder( const string& path )
 	{
-		mPath = path;
+		try {
+			mDemuxer = DemuxerRef( new Demuxer( path.c_str() ) );
 
-		mDemuxer = DemuxerRef( new Demuxer( path.c_str() ) );
+			mStreamFrameSinkAudio = StreamFrameSink::create( AVMediaType::AVMEDIA_TYPE_AUDIO );
+			mStreamFrameSinkVideo = StreamFrameSink::create( AVMediaType::AVMEDIA_TYPE_VIDEO );
 
-		mStreamFrameSinkAudio = StreamFrameSink::create( AVMediaType::AVMEDIA_TYPE_AUDIO );
-		mStreamFrameSinkVideo = StreamFrameSink::create( AVMediaType::AVMEDIA_TYPE_VIDEO );
-
-		mDemuxer->DecodeBestAudioStream( mStreamFrameSinkAudio.get() );
-		mDemuxer->DecodeBestVideoStream( mStreamFrameSinkVideo.get() );
-		mDemuxer->PreparePipeline();
+			mDemuxer->DecodeBestAudioStream( mStreamFrameSinkAudio.get() );
+			mDemuxer->DecodeBestVideoStream( mStreamFrameSinkVideo.get() );
+			mDemuxer->PreparePipeline();
+		} catch ( FFmpegException ex ) {
+			CI_LOG_EXCEPTION( ex.what(), ex );
+			if ( mDemuxer != nullptr ) {
+				mDemuxer.reset();
+			}
+			if ( mStreamFrameSinkAudio != nullptr ) {
+				mStreamFrameSinkAudio.reset();
+			}
+			if ( mStreamFrameSinkVideo != nullptr ) {
+				mStreamFrameSinkVideo.reset();
+			}
+		}
 	}
 
 	void Decoder::connectEventHandler( const function<void( int32_t, AVFrame*, StreamData* )>& eventHandler )

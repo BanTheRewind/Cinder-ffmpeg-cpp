@@ -45,6 +45,10 @@ namespace ffmpegcpp {
 
 		void				step();
 
+		DemuxerRef			getDemuxer() const { return mDemuxer; };
+		StreamFrameSinkRef	getAudioStreamFrameSink() const	{ return mStreamFrameSinkAudio; };
+		StreamFrameSinkRef	getVideoStreamFrameSink() const	{ return mStreamFrameSinkVideo; };
+
 		template<typename T, typename Y> 
 		inline void			connectEventHandler( T eventHandler, Y *obj )
 		{
@@ -58,7 +62,5 @@ namespace ffmpegcpp {
 		DemuxerRef			mDemuxer				{ nullptr };
 		StreamFrameSinkRef	mStreamFrameSinkAudio	{ nullptr };
 		StreamFrameSinkRef	mStreamFrameSinkVideo	{ nullptr };
-		std::string			mPath					{ "" };
-		bool				mRunning				{ false };
 	};
 }
