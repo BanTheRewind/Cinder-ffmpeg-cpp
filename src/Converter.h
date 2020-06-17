@@ -7,7 +7,7 @@
 #include <memory>
 
 namespace ffmpegcpp {
-	using ConverterRef			= std::shared_ptr<class Converter>;
+	using ConverterRef		= std::shared_ptr<class Converter>;
 	
 	class Converter
 	{

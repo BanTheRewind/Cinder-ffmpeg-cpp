@@ -7,7 +7,7 @@
 
 namespace ffmpegcpp {
 	ci::Channel8uRef		toChannel( AVFrame* frame );
-	ci::Surface8uRef		toSurface( AVFrame* frame );
+	ci::Surface8uRef		toSurface( AVFrame* frame, ci::SurfaceChannelOrder = ci::SurfaceChannelOrder::RGBA );
 
 	using DecoderRef			= std::shared_ptr<class Decoder>;
 	using StreamFrameSinkRef	= std::shared_ptr<class StreamFrameSink>;

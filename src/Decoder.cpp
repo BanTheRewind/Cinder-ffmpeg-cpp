@@ -11,8 +11,8 @@ namespace ffmpegcpp {
 		return Channel8u::create( frame->width, frame->height, (uint32_t)frame->linesize[ 0 ], 1, frame->data[ 0 ] );
 	}
 
-	Surface8uRef toSurface( AVFrame* frame ) {
-		return Surface8u::create( frame->data[ 0 ], frame->width, frame->height, frame->linesize[ 0 ], SurfaceChannelOrder::RGBA );
+	Surface8uRef toSurface( AVFrame* frame, SurfaceChannelOrder surfaceChannelOrder ) {
+		return Surface8u::create( frame->data[ 0 ], frame->width, frame->height, frame->linesize[ 0 ], surfaceChannelOrder );
 	}
 
 	StreamFrameSinkRef StreamFrameSink::create( AVMediaType mediaType )
